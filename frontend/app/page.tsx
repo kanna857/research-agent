@@ -22,8 +22,9 @@ import { PaperRankPanel } from "@/components/PaperRankPanel";
 import { PaperAuditPanel } from "@/components/PaperAuditPanel";
 import { ReplicationPanel } from "@/components/ReplicationPanel";
 import { VisualResearchModal } from "@/components/VisualResearchModal";
+import { ScienceWorkbench } from "@/components/ScienceWorkbench";
 import { Paper, ResearchStatus } from "@/types/research";
-import { ShieldCheck, Database, Cpu, Network, Sparkles, LayoutDashboard } from "lucide-react";
+import { ShieldCheck, Database, Cpu, Network, Sparkles, LayoutDashboard, Terminal } from "lucide-react";
 
 export default function HomePage() {
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -31,7 +32,7 @@ export default function HomePage() {
   const [isLoading, setIsLoading] = useState(false);
   const [selectedVisualPaper, setSelectedVisualPaper] = useState<Paper | null>(null);
   const [activeTab, setActiveTab] = useState<
-    "overview" | "claims" | "graph" | "papers" | "ranking" | "audit" | "replication" | "contradictions" | "trust" | "uncertainty" | "bias" | "reproducibility" | "gaps" | "redteam" | "judge" | "report"
+    "overview" | "workbench" | "claims" | "graph" | "papers" | "ranking" | "audit" | "replication" | "contradictions" | "trust" | "uncertainty" | "bias" | "reproducibility" | "gaps" | "redteam" | "judge" | "report"
   >("overview");
 
   const handleStartResearch = async (query: string, maxPapers: number) => {
@@ -99,8 +100,15 @@ export default function HomePage() {
       </section>
 
       {/* 1. Research Workspace Input */}
-      <section className="w-full">
+      <section className="w-full space-y-6">
         <ResearchInput onSubmit={handleStartResearch} isLoading={isLoading} />
+        
+        {/* Render Science Workbench when no active pipeline status or when selected */}
+        {!status && (
+          <div className="pt-4">
+            <ScienceWorkbench />
+          </div>
+        )}
       </section>
 
       {/* Active Research Session Workspace */}
@@ -125,6 +133,18 @@ export default function HomePage() {
             >
               <LayoutDashboard className="w-3.5 h-3.5" />
               <span>Overview</span>
+            </button>
+
+            <button
+              onClick={() => setActiveTab("workbench")}
+              className={`px-3.5 py-2 rounded-xl transition-all flex items-center space-x-1.5 ${
+                activeTab === "workbench"
+                  ? "bg-blue-500/20 text-blue-300 border border-blue-500/40 font-bold"
+                  : "text-gray-400 hover:text-white"
+              }`}
+            >
+              <Terminal className="w-3.5 h-3.5 text-blue-400" />
+              <span>Science Workbench</span>
             </button>
 
             <button
@@ -302,6 +322,7 @@ export default function HomePage() {
             </div>
           )}
 
+          {activeTab === "workbench" && <ScienceWorkbench />}
           {activeTab === "claims" && <ClaimExplorer claims={status.claims} />}
           {activeTab === "graph" && <EvidenceGraph sessionId={status.session_id} />}
           {activeTab === "papers" && (

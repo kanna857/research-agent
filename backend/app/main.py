@@ -15,6 +15,7 @@ from app.api.v1.papers import router as papers_router
 from app.api.v1.claims import router as claims_router
 from app.api.v1.graph import router as graph_router
 from app.api.v1.visual import router as visual_router
+from app.api.v1.commands import router as commands_router
 
 logging.basicConfig(level=logging.INFO if not settings.DEBUG else logging.DEBUG)
 logger = logging.getLogger("knowsure")
@@ -51,6 +52,7 @@ app.include_router(papers_router, prefix=settings.API_V1_STR, tags=["Papers Expl
 app.include_router(claims_router, prefix=settings.API_V1_STR, tags=["Claims Verification"])
 app.include_router(graph_router, prefix=settings.API_V1_STR, tags=["Evidence Graph"])
 app.include_router(visual_router, prefix=f"{settings.API_V1_STR}/visual", tags=["Visual Research"])
+app.include_router(commands_router, prefix=f"{settings.API_V1_STR}/commands", tags=["Feynman Workflows"])
 
 @app.get("/")
 async def root():
