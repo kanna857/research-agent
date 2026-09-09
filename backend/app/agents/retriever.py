@@ -6,6 +6,7 @@ from app.schemas.paper import PaperResponse, PaperCreate
 from app.services.openalex import openalex_service
 from app.services.semanticscholar import semanticscholar_service
 from app.services.arxiv import arxiv_service
+from app.tools.web_search_tool import web_search_tool
 
 logger = logging.getLogger(__name__)
 
@@ -38,23 +39,30 @@ class AcademicRetrieverAgent:
         abstract_score = 20.0 if paper.abstract else 0.0
         return keyword_score + citation_score + abstract_score
 
-    async def retrieve_and_normalize(self, queries: List[str], max_papers: int = 10) -> List[PaperResponse]:
+    async def retrieve_and_normalize(
+        self,
+        queries: List[str],
+        max_papers: int = 10,
+        enable_web_search: bool = True,
+        depth: int = 2
+    ) -> List[PaperResponse]:
         """
-        Queries OpenAlex, Semantic Scholar, and arXiv concurrently across search queries.
+        Queries OpenAlex, Semantic Scholar, arXiv, and broad web search concurrently across search queries.
         Normalizes metadata, removes duplicates by DOI and normalized title.
         Ranks papers by relevance score and citation count.
-        Never fabricates missing metadata.
         """
         all_papers: List[PaperCreate] = []
-        search_queries = queries[:2] if queries else ["artificial intelligence research"]
+        search_queries = queries[:max(2, depth + 1)] if queries else ["artificial intelligence research"]
         
-        # Build tasks for all queries and all 3 academic services
+        # Build tasks for all queries, academic services, and broad web search crawler
         tasks = []
         per_source_limit = max(3, max_papers // 2 + 1)
         for q in search_queries:
             tasks.append(openalex_service.search_papers(q, limit=per_source_limit))
             tasks.append(semanticscholar_service.search_papers(q, limit=per_source_limit))
             tasks.append(arxiv_service.search_papers(q, limit=per_source_limit))
+            if enable_web_search:
+                tasks.append(web_search_tool.search_and_crawl(q, limit=per_source_limit))
 
         results = await asyncio.gather(*tasks, return_exceptions=True)
 

@@ -35,10 +35,17 @@ export default function HomePage() {
     "overview" | "workbench" | "claims" | "graph" | "papers" | "ranking" | "audit" | "replication" | "contradictions" | "trust" | "uncertainty" | "bias" | "reproducibility" | "gaps" | "redteam" | "judge" | "report"
   >("overview");
 
-  const handleStartResearch = async (query: string, maxPapers: number) => {
+  const handleStartResearch = async (
+    query: string,
+    maxPapers: number,
+    breadth: number = 3,
+    depth: number = 2,
+    enableWebSearch: boolean = true,
+    clarificationAnswers?: Record<string, string>
+  ) => {
     setIsLoading(true);
     try {
-      const initRes = await startResearch(query, maxPapers);
+      const initRes = await startResearch(query, maxPapers, breadth, depth, enableWebSearch, clarificationAnswers);
       setSessionId(initRes.session_id);
       setStatus(initRes);
     } catch (err: any) {

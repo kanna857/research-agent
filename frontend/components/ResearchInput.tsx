@@ -1,10 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Sparkles, ArrowRight, BookOpen, AlertTriangle, Zap, CheckCircle2 } from "lucide-react";
+import { Search, Sparkles, ArrowRight, BookOpen, AlertTriangle, Zap, Sliders, Globe, HelpCircle } from "lucide-react";
+import { ClarificationModal } from "@/components/ClarificationModal";
+import { getClarificationQuestions } from "@/lib/api";
+import { ClarificationResponse } from "@/types/research";
 
 interface ResearchInputProps {
-  onSubmit: (query: string, maxPapers: number) => void;
+  onSubmit: (
+    query: string,
+    maxPapers: number,
+    breadth?: number,
+    depth?: number,
+    enableWebSearch?: boolean,
+    clarificationAnswers?: Record<string, string>
+  ) => void;
   isLoading: boolean;
 }
 
@@ -18,16 +28,66 @@ export function ResearchInput({ onSubmit, isLoading }: ResearchInputProps) {
   const [query, setQuery] = useState("");
   const [maxPapers, setMaxPapers] = useState(10);
   const [mode, setMode] = useState("DEEP_RESEARCH");
+  const [breadth, setBreadth] = useState(3);
+  const [depth, setDepth] = useState(2);
+  const [enableWebSearch, setEnableWebSearch] = useState(true);
+  
+  // Intake Clarification state
+  const [clarificationData, setClarificationData] = useState<ClarificationResponse | null>(null);
+  const [isClarifyOpen, setIsClarifyOpen] = useState(false);
+  const [isFetchingClarify, setIsFetchingClarify] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim() || isLoading) return;
-    onSubmit(query.trim(), maxPapers);
+    onSubmit(query.trim(), maxPapers, breadth, depth, enableWebSearch);
   };
 
   const handleRunPreset = (presetQuery: string) => {
     setQuery(presetQuery);
-    onSubmit(presetQuery, maxPapers);
+    onSubmit(presetQuery, maxPapers, breadth, depth, enableWebSearch);
+  };
+
+  const handleFetchClarification = async () => {
+    if (!query.trim()) return;
+    setIsFetchingClarify(true);
+    try {
+      const data = await getClarificationQuestions(query.trim());
+      setClarificationData(data);
+      setIsClarifyOpen(true);
+    } catch (err) {
+      console.error("Clarification intake error:", err);
+      // Fallback modal launch
+      setClarificationData({
+        query: query.trim(),
+        suggested_refinements: [
+          `${query.trim()} with quantitative evaluation benchmarks`,
+          `Empirical analysis of ${query.trim()} comparing baseline models`,
+          `Literature review of ${query.trim()} focusing on cross-domain robustness`
+        ],
+        followup_questions: [
+          {
+            id: "target_scope",
+            question: "What evaluation scope should the investigation prioritize?",
+            options: [
+              "Peer-reviewed academic papers only",
+              "Academic literature + technical web docs & open-source implementations",
+              "Cross-domain benchmark generalizability"
+            ],
+            suggested_default: "Academic literature + technical web docs & open-source implementations"
+          }
+        ]
+      });
+      setIsClarifyOpen(true);
+    } finally {
+      setIsFetchingClarify(false);
+    }
+  };
+
+  const handleConfirmClarification = (answers: Record<string, string>, refinedQuery?: string) => {
+    const finalQuery = refinedQuery || query.trim();
+    if (refinedQuery) setQuery(refinedQuery);
+    onSubmit(finalQuery, maxPapers, breadth, depth, enableWebSearch, answers);
   };
 
   return (
@@ -43,10 +103,19 @@ export function ResearchInput({ onSubmit, isLoading }: ResearchInputProps) {
               <label className="block text-xs font-mono text-cyan-400 uppercase tracking-wider font-semibold">
                 Autonomous Research Investigation Query
               </label>
-              <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
-                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
-                Live Retrieval Connected
-              </span>
+              <button
+                type="button"
+                onClick={handleFetchClarification}
+                disabled={!query.trim() || isFetchingClarify || isLoading}
+                className="text-xs font-mono text-cyan-300 hover:text-cyan-200 bg-cyan-500/10 border border-cyan-500/30 hover:bg-cyan-500/20 px-3 py-1 rounded-full flex items-center gap-1.5 transition-all disabled:opacity-40"
+              >
+                {isFetchingClarify ? (
+                  <Sparkles className="w-3.5 h-3.5 animate-spin" />
+                ) : (
+                  <HelpCircle className="w-3.5 h-3.5" />
+                )}
+                <span>Refine & Clarify Query</span>
+              </button>
             </div>
 
             <div className="relative group">
@@ -62,11 +131,76 @@ export function ResearchInput({ onSubmit, isLoading }: ResearchInputProps) {
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
+          {/* Configurable Scope Controls: Breadth, Depth & Web Search */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-3 bg-slate-950/60 rounded-xl border border-slate-800 text-xs font-mono">
+            {/* Breadth Control */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-slate-300">
+                <span className="flex items-center gap-1">
+                  <Sliders className="w-3.5 h-3.5 text-cyan-400" />
+                  Breadth (Paths):
+                </span>
+                <span className="font-bold text-cyan-400">{breadth} branches</span>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={8}
+                value={breadth}
+                onChange={(e) => setBreadth(Number(e.target.value))}
+                className="w-full accent-cyan-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+                disabled={isLoading}
+              />
+            </div>
+
+            {/* Depth Control */}
+            <div className="space-y-1">
+              <div className="flex items-center justify-between text-slate-300">
+                <span className="flex items-center gap-1">
+                  <Sliders className="w-3.5 h-3.5 text-purple-400" />
+                  Depth (Levels):
+                </span>
+                <span className="font-bold text-purple-400">{depth} levels</span>
+              </div>
+              <input
+                type="range"
+                min={1}
+                max={5}
+                value={depth}
+                onChange={(e) => setDepth(Number(e.target.value))}
+                className="w-full accent-purple-500 h-1.5 bg-slate-800 rounded-lg cursor-pointer"
+                disabled={isLoading}
+              />
+            </div>
+
+            {/* Broad Web Search & Crawling Toggle */}
+            <div className="flex items-center justify-between px-2 pt-1 md:pt-0">
+              <span className="flex items-center gap-1.5 text-slate-300">
+                <Globe className="w-3.5 h-3.5 text-emerald-400" />
+                Web Crawling:
+              </span>
+              <button
+                type="button"
+                onClick={() => setEnableWebSearch(!enableWebSearch)}
+                className={`px-3 py-1 rounded-full text-[11px] font-bold transition-all border ${
+                  enableWebSearch
+                    ? "bg-emerald-500/20 text-emerald-300 border-emerald-500/40"
+                    : "bg-slate-900 text-slate-500 border-slate-800"
+                }`}
+                disabled={isLoading}
+              >
+                {enableWebSearch ? "ENABLED" : "OFF"}
+              </button>
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-4 pt-1">
             <div className="flex items-center space-x-3 text-xs text-slate-400 font-mono">
               <BookOpen className="w-4 h-4 text-cyan-400" />
               <span>Corpus:</span>
-              <span className="text-slate-200">OpenAlex • PubMed • Europe PMC • arXiv</span>
+              <span className="text-slate-200">
+                OpenAlex • PubMed • arXiv {enableWebSearch && "• Web Crawl"}
+              </span>
             </div>
 
             <div className="flex flex-wrap items-center gap-3">
@@ -91,7 +225,7 @@ export function ResearchInput({ onSubmit, isLoading }: ResearchInputProps) {
               </div>
 
               <div className="flex items-center space-x-2 text-xs text-slate-400 font-mono">
-                <label htmlFor="max-papers">Depth:</label>
+                <label htmlFor="max-papers">Papers:</label>
                 <select
                   id="max-papers"
                   value={maxPapers}
@@ -158,6 +292,14 @@ export function ResearchInput({ onSubmit, isLoading }: ResearchInputProps) {
           KnowSure never invents backing citations or synthetic metrics. Claims without verified peer-reviewed evidence trigger the strict fallback: <code className="bg-amber-950/80 border border-amber-500/40 px-2 py-0.5 rounded text-amber-300 font-bold">INSUFFICIENT_EVIDENCE</code>.
         </div>
       </div>
+
+      {/* Pre-Research Intake Clarification Modal */}
+      <ClarificationModal
+        isOpen={isClarifyOpen}
+        onClose={() => setIsClarifyOpen(false)}
+        clarificationData={clarificationData}
+        onConfirm={handleConfirmClarification}
+      />
     </div>
   );
 }

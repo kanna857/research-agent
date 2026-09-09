@@ -37,6 +37,19 @@ export type ResearchMode =
   | "RESEARCH_COMPARISON"
   | "RESEARCH_GAP_FINDER";
 
+export interface ClarificationQuestion {
+  id: string;
+  question: string;
+  options: string[];
+  suggested_default: string;
+}
+
+export interface ClarificationResponse {
+  query: string;
+  followup_questions: ClarificationQuestion[];
+  suggested_refinements: string[];
+}
+
 export interface PaperRankBreakdown {
   relevance_score: number;
   citation_score: number;
@@ -174,6 +187,8 @@ export interface ResearchStatus {
     search_queries: string[];
     required_evidence: string[];
     ambiguities: string[];
+    breadth?: number;
+    depth?: number;
   };
   papers: Paper[];
   claims: Claim[];

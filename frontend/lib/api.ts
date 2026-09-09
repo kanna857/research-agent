@@ -1,15 +1,41 @@
-import { ResearchStatus } from "@/types/research";
+import { ResearchStatus, ClarificationResponse } from "@/types/research";
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000/api/v1";
 
-export async function startResearch(query: string, maxPapers: number = 10): Promise<ResearchStatus> {
+export async function startResearch(
+  query: string,
+  maxPapers: number = 10,
+  breadth: number = 3,
+  depth: number = 2,
+  enableWebSearch: boolean = true,
+  clarificationAnswers?: Record<string, string>
+): Promise<ResearchStatus> {
   const res = await fetch(`${API_BASE}/research`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ query, max_papers: maxPapers }),
+    body: JSON.stringify({
+      query,
+      max_papers: maxPapers,
+      breadth,
+      depth,
+      enable_web_search: enableWebSearch,
+      clarification_answers: clarificationAnswers || null
+    }),
   });
   if (!res.ok) {
     throw new Error(`Failed to initialize research session: ${res.statusText}`);
+  }
+  return res.json();
+}
+
+export async function getClarificationQuestions(query: string): Promise<ClarificationResponse> {
+  const res = await fetch(`${API_BASE}/research/clarify`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ query }),
+  });
+  if (!res.ok) {
+    throw new Error(`Failed to fetch clarification questions: ${res.statusText}`);
   }
   return res.json();
 }

@@ -33,9 +33,27 @@ class ResearchMode(str, Enum):
     RESEARCH_GAP_FINDER = "RESEARCH_GAP_FINDER"
 
 class ResearchRequest(BaseModel):
-    query: str = Field(..., description="Research question to investigate", min_length=5)
+    query: str = Field(..., description="Research question to investigate", min_length=3)
     max_papers: int = Field(default=10, ge=1, le=50, description="Max academic papers to retrieve")
     mode: ResearchMode = Field(default=ResearchMode.DEEP_RESEARCH, description="Selected research mode")
+    breadth: int = Field(default=3, ge=1, le=8, description="Parallel search exploration paths")
+    depth: int = Field(default=2, ge=1, le=5, description="Recursive research iteration levels")
+    enable_web_search: bool = Field(default=True, description="Enable broad web search and page crawling")
+    clarification_answers: Optional[Dict[str, str]] = Field(default=None, description="User answers to intake follow-up questions")
+
+class ClarificationQuestion(BaseModel):
+    id: str
+    question: str
+    options: List[str] = Field(default_factory=list)
+    suggested_default: str = ""
+
+class ClarificationRequest(BaseModel):
+    query: str = Field(..., description="Original research prompt to generate intake questions for")
+
+class ClarificationResponse(BaseModel):
+    query: str
+    followup_questions: List[ClarificationQuestion] = Field(default_factory=list)
+    suggested_refinements: List[str] = Field(default_factory=list)
 
 class ResearchPlan(BaseModel):
     objective: str
@@ -43,6 +61,8 @@ class ResearchPlan(BaseModel):
     search_queries: List[str] = Field(default_factory=list)
     required_evidence: List[str] = Field(default_factory=list)
     ambiguities: List[str] = Field(default_factory=list)
+    breadth: int = 3
+    depth: int = 2
 
 class Contradiction(BaseModel):
     contradiction_id: str

@@ -7,7 +7,7 @@ from sqlalchemy.future import select
 from app.database.session import get_db
 from app.database.models import ResearchSessionModel, PaperModel, ClaimModel, EvidenceModel
 from app.schemas.research import (
-    ResearchRequest, ResearchStatusResponse, WorkflowStage
+    ResearchRequest, ResearchStatusResponse, WorkflowStage, ClarificationRequest, ClarificationResponse
 )
 
 from app.agents.planner import planner_agent
@@ -29,14 +29,36 @@ from app.services.qdrant_service import qdrant_service
 
 router = APIRouter()
 
-async def run_local_research_pipeline(session_id: str, query: str, max_papers: int, db: AsyncSession):
+@router.post("/research/clarify", response_model=ClarificationResponse)
+async def clarify_research(req: ClarificationRequest):
     """
-    Executes the full autonomous research pipeline locally, storing relational data,
-    performing Paper Ranking, Audits, Replication Analyses, PRO/CON synthesis, Red-Team audit, and Judge evaluation.
+    Intake step generating smart pre-research follow-up questions and prompt refinements
+    to clarify research goals upfront before execution.
+    """
+    return await planner_agent.generate_followup_questions(req.query)
+
+async def run_local_research_pipeline(
+    session_id: str,
+    query: str,
+    max_papers: int,
+    db: AsyncSession,
+    breadth: int = 3,
+    depth: int = 2,
+    enable_web_search: bool = True,
+    clarification_answers: dict = None
+):
+    """
+    Executes the full autonomous research pipeline locally, incorporating breadth, depth,
+    broad web search & crawling, paper ranking, audits, and judge verification.
     """
     try:
         # 1. Planning Stage
-        plan = await planner_agent.plan(query)
+        plan = await planner_agent.plan(
+            query=query,
+            breadth=breadth,
+            depth=depth,
+            clarification_answers=clarification_answers
+        )
         session_obj = await db.get(ResearchSessionModel, session_id)
         if session_obj:
             session_obj.current_stage = WorkflowStage.PLANNING.value
@@ -44,8 +66,13 @@ async def run_local_research_pipeline(session_id: str, query: str, max_papers: i
             session_obj.plan_json = plan.model_dump()
             await db.commit()
 
-        # 2. Academic Retrieval & Multi-Factor Paper Ranking
-        raw_papers = await retriever_agent.retrieve_and_normalize(plan.search_queries, max_papers=max_papers)
+        # 2. Academic Retrieval + Broad Web Search & Crawling
+        raw_papers = await retriever_agent.retrieve_and_normalize(
+            queries=plan.search_queries,
+            max_papers=max_papers,
+            enable_web_search=enable_web_search,
+            depth=depth
+        )
         papers = await ranking_agent.rank_papers(raw_papers, query)
         
         # 3. Paper Audits & Replication Feasibility Analyses
@@ -246,7 +273,17 @@ async def start_research(
 
     triggered_n8n = await n8n_client.trigger_research_workflow(session_id, req.query, req.max_papers)
     if not triggered_n8n:
-        background_tasks.add_task(run_local_research_pipeline, session_id, req.query, req.max_papers, db)
+        background_tasks.add_task(
+            run_local_research_pipeline,
+            session_id,
+            req.query,
+            req.max_papers,
+            db,
+            req.breadth,
+            req.depth,
+            req.enable_web_search,
+            req.clarification_answers
+        )
 
     return ResearchStatusResponse(
         session_id=session_id,
