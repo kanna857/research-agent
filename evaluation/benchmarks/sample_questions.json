@@ -1,0 +1,14 @@
+[
+  {
+    "id": "bench_001",
+    "question": "Can large language models reliably detect misinformation across different languages and domains?",
+    "expected_verdict": "PARTIALLY_SUPPORTED",
+    "required_topics": ["multilingual", "domain adaptation", "empirical benchmark"]
+  },
+  {
+    "id": "bench_002",
+    "question": "Does retrieval augmented generation eliminate all hallucination risks in clinical medical AI?",
+    "expected_verdict": "CONTRADICTED",
+    "required_topics": ["clinical NLP", "RAG evaluation", "hallucination rate"]
+  }
+]

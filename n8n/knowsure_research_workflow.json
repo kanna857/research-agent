@@ -1,0 +1,62 @@
+{
+  "name": "KnowSure Research Intelligence Workflow",
+  "nodes": [
+    {
+      "parameters": {
+        "httpMethod": "POST",
+        "path": "knowsure-research",
+        "options": {}
+      },
+      "name": "Webhook Incoming Request",
+      "type": "n8n-nodes-base.webhook",
+      "typeVersion": 1,
+      "position": [100, 300]
+    },
+    {
+      "parameters": {
+        "values": {
+          "string": [
+            { "name": "session_id", "value": "={{ $json.body.session_id }}" },
+            { "name": "query", "value": "={{ $json.body.query }}" },
+            { "name": "callback_url", "value": "={{ $json.body.callback_url }}" }
+          ]
+        }
+      },
+      "name": "Normalize Input",
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 1,
+      "position": [300, 300]
+    },
+    {
+      "parameters": {
+        "url": "={{ $json.callback_url }}",
+        "options": {},
+        "headerParametersUi": {
+          "parameter": [
+            { "name": "X-N8N-API-Key", "value": "knowsure_n8n_secret_token" }
+          ]
+        }
+      },
+      "name": "Notify Backend Callback",
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 1,
+      "position": [500, 300]
+    }
+  ],
+  "connections": {
+    "Webhook Incoming Request": {
+      "main": [
+        [
+          { "node": "Normalize Input", "type": "main", "index": 0 }
+        ]
+      ]
+    },
+    "Normalize Input": {
+      "main": [
+        [
+          { "node": "Notify Backend Callback", "type": "main", "index": 0 }
+        ]
+      ]
+    }
+  }
+}
