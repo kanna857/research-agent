@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { Search, Sparkles, ArrowRight, BookOpen, AlertTriangle } from "lucide-react";
+import { Search, Sparkles, ArrowRight, BookOpen, AlertTriangle, Zap, CheckCircle2 } from "lucide-react";
 
 interface ResearchInputProps {
   onSubmit: (query: string, maxPapers: number) => void;
@@ -25,44 +25,58 @@ export function ResearchInput({ onSubmit, isLoading }: ResearchInputProps) {
     onSubmit(query.trim(), maxPapers);
   };
 
+  const handleRunPreset = (presetQuery: string) => {
+    setQuery(presetQuery);
+    onSubmit(presetQuery, maxPapers);
+  };
+
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
-      <div className="glass-panel p-8 rounded-2xl border border-gray-800 shadow-2xl relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/5 rounded-full blur-3xl pointer-events-none" />
+      <div className="glass-panel p-8 rounded-2xl border border-slate-800 shadow-2xl relative overflow-hidden">
+        {/* Glow backdrop accent */}
+        <div className="absolute top-0 right-0 w-96 h-96 bg-cyan-500/10 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-0 left-0 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl pointer-events-none" />
         
-        <form onSubmit={handleSubmit} className="space-y-6">
+        <form onSubmit={handleSubmit} className="space-y-6 relative z-10">
           <div className="space-y-2">
-            <label className="block text-sm font-mono text-cyan-400 uppercase tracking-wider font-semibold">
-              Research Question Investigation
-            </label>
-            <div className="relative">
+            <div className="flex items-center justify-between">
+              <label className="block text-xs font-mono text-cyan-400 uppercase tracking-wider font-semibold">
+                Autonomous Research Investigation Query
+              </label>
+              <span className="text-[11px] font-mono text-slate-400 flex items-center gap-1">
+                <span className="w-2 h-2 rounded-full bg-emerald-400 animate-pulse" />
+                Live Retrieval Connected
+              </span>
+            </div>
+
+            <div className="relative group">
               <textarea
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
                 placeholder="Enter scientific question (e.g. Can large language models reliably detect misinformation across different languages and domains?)..."
                 rows={3}
-                className="w-full bg-gray-950/80 border border-gray-800 rounded-xl p-4 pr-12 text-white placeholder-gray-500 focus:outline-none focus:border-cyan-500 focus:ring-1 focus:ring-cyan-500 transition-all font-sans text-lg resize-none"
+                className="w-full bg-slate-950/90 border border-slate-800 rounded-xl p-4 pr-12 text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all font-sans text-base leading-relaxed resize-none shadow-inner"
                 disabled={isLoading}
               />
-              <Search className="absolute right-4 top-4 w-6 h-6 text-gray-500 pointer-events-none" />
+              <Search className="absolute right-4 top-4 w-5 h-5 text-slate-500 group-hover:text-cyan-400 transition-colors pointer-events-none" />
             </div>
           </div>
 
           <div className="flex flex-wrap items-center justify-between gap-4 pt-2">
-            <div className="flex items-center space-x-3 text-sm text-gray-400 font-mono">
+            <div className="flex items-center space-x-3 text-xs text-slate-400 font-mono">
               <BookOpen className="w-4 h-4 text-cyan-400" />
-              <span>Target Sources:</span>
-              <span className="text-gray-200">OpenAlex • Semantic Scholar • arXiv</span>
+              <span>Corpus:</span>
+              <span className="text-slate-200">OpenAlex • PubMed • Europe PMC • arXiv</span>
             </div>
 
-            <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center space-x-2 text-sm text-gray-400 font-mono">
+            <div className="flex flex-wrap items-center gap-3">
+              <div className="flex items-center space-x-2 text-xs text-slate-400 font-mono">
                 <label htmlFor="research-mode">Mode:</label>
                 <select
                   id="research-mode"
                   value={mode}
                   onChange={(e) => setMode(e.target.value)}
-                  className="bg-gray-900 border border-gray-800 text-cyan-400 rounded-lg px-3 py-1.5 font-mono text-xs focus:outline-none focus:border-cyan-500 font-bold"
+                  className="bg-slate-900 border border-slate-700 text-cyan-400 rounded-lg px-3 py-1.5 font-mono text-xs focus:outline-none focus:border-cyan-500 font-bold"
                   disabled={isLoading}
                 >
                   <option value="DEEP_RESEARCH">🔬 Deep Research</option>
@@ -76,13 +90,13 @@ export function ResearchInput({ onSubmit, isLoading }: ResearchInputProps) {
                 </select>
               </div>
 
-              <div className="flex items-center space-x-2 text-sm text-gray-400 font-mono">
+              <div className="flex items-center space-x-2 text-xs text-slate-400 font-mono">
                 <label htmlFor="max-papers">Depth:</label>
                 <select
                   id="max-papers"
                   value={maxPapers}
                   onChange={(e) => setMaxPapers(Number(e.target.value))}
-                  className="bg-gray-900 border border-gray-800 text-cyan-400 rounded-lg px-3 py-1.5 font-mono text-xs focus:outline-none focus:border-cyan-500"
+                  className="bg-slate-900 border border-slate-700 text-cyan-400 rounded-lg px-3 py-1.5 font-mono text-xs focus:outline-none focus:border-cyan-500"
                   disabled={isLoading}
                 >
                   <option value={5}>5 Papers</option>
@@ -94,17 +108,17 @@ export function ResearchInput({ onSubmit, isLoading }: ResearchInputProps) {
               <button
                 type="submit"
                 disabled={!query.trim() || isLoading}
-                className="flex items-center space-x-2 px-8 py-3.5 rounded-xl bg-gradient-to-r from-cyan-500 to-emerald-500 text-gray-950 font-bold tracking-wide shadow-lg shadow-cyan-500/25 hover:opacity-95 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+                className="flex items-center space-x-2 px-7 py-3 rounded-xl bg-gradient-to-r from-cyan-500 via-blue-600 to-emerald-500 text-slate-950 font-extrabold tracking-wider text-xs shadow-lg shadow-cyan-500/25 hover:shadow-cyan-500/40 hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none transition-all"
               >
                 {isLoading ? (
                   <>
-                    <Sparkles className="w-5 h-5 animate-spin" />
-                    <span>INVESTIGATING...</span>
+                    <Sparkles className="w-4 h-4 animate-spin text-slate-950" />
+                    <span>RUNNING PIPELINE...</span>
                   </>
                 ) : (
                   <>
                     <span>START RESEARCH</span>
-                    <ArrowRight className="w-5 h-5 stroke-[2.5]" />
+                    <ArrowRight className="w-4 h-4 stroke-[2.5]" />
                   </>
                 )}
               </button>
@@ -113,30 +127,35 @@ export function ResearchInput({ onSubmit, isLoading }: ResearchInputProps) {
         </form>
       </div>
 
-      {/* Example Prompt Shortcuts */}
+      {/* Example Research Prompts with One-Click Execution */}
       <div className="space-y-3">
-        <p className="text-xs uppercase font-mono tracking-wider text-gray-400">
-          Example Research Investigations:
-        </p>
+        <div className="flex items-center justify-between">
+          <p className="text-xs uppercase font-mono tracking-wider text-slate-400 font-semibold">
+            Click Any Sample Prompt to Run Instantly:
+          </p>
+          <span className="text-[11px] font-mono text-blue-400">1-Click Launch</span>
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           {EXAMPLE_QUERIES.map((q, i) => (
             <button
               key={i}
-              onClick={() => setQuery(q)}
-              className="text-left p-3.5 rounded-xl glass-card border border-gray-800/80 hover:border-cyan-500/50 hover:bg-gray-800/50 text-xs text-gray-300 transition-all font-sans leading-relaxed flex items-start space-x-2 group"
+              onClick={() => handleRunPreset(q)}
+              disabled={isLoading}
+              className="text-left p-3.5 rounded-xl glass-card border border-slate-800 hover:border-cyan-500/50 hover:bg-slate-800/80 text-xs text-slate-300 transition-all font-sans leading-relaxed flex items-start space-x-2.5 group shadow-sm hover:shadow-md"
             >
-              <Sparkles className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5 group-hover:scale-110 transition-transform" />
-              <span>{q}</span>
+              <Zap className="w-4 h-4 text-cyan-400 shrink-0 mt-0.5 group-hover:scale-110 group-hover:text-emerald-400 transition-all" />
+              <span className="group-hover:text-white transition-colors">{q}</span>
             </button>
           ))}
         </div>
       </div>
 
-      {/* Core Principle Callout */}
-      <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start space-x-3 text-amber-300 text-xs font-mono">
-        <AlertTriangle className="w-5 h-5 shrink-0 text-amber-400" />
+      {/* Zero Hallucination Protocol Callout */}
+      <div className="p-4 rounded-xl bg-amber-500/10 border border-amber-500/20 flex items-start space-x-3 text-amber-300 text-xs font-mono shadow-md">
+        <AlertTriangle className="w-5 h-5 shrink-0 text-amber-400 mt-0.5" />
         <div>
-          <span className="font-bold text-amber-200 uppercase">Strict Evidence Protocol:</span> KnowSure never invents citations or claims. If peer-reviewed literature is insufficient to substantiate an answer, the platform explicitly flags <code className="bg-amber-950/60 px-1.5 py-0.5 rounded text-amber-400 font-bold">INSUFFICIENT EVIDENCE</code>.
+          <span className="font-bold text-amber-200 uppercase block mb-0.5">Strict Zero-Hallucination Protocol:</span>
+          KnowSure never invents backing citations or synthetic metrics. Claims without verified peer-reviewed evidence trigger the strict fallback: <code className="bg-amber-950/80 border border-amber-500/40 px-2 py-0.5 rounded text-amber-300 font-bold">INSUFFICIENT_EVIDENCE</code>.
         </div>
       </div>
     </div>
